@@ -1,24 +1,13 @@
 "use client";
 
 import { useState } from "react";
-
-type Values = { name: string; email: string; phone: string; message: string };
-type Errors = Partial<Record<keyof Values, string>>;
-
-const initial: Values = { name: "", email: "", phone: "", message: "" };
-
-function validate(v: Values): Errors {
-  const e: Errors = {};
-  if (!v.name.trim()) e.name = "이름을 입력해 주세요.";
-  if (!v.email.trim()) e.email = "이메일을 입력해 주세요.";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email))
-    e.email = "올바른 이메일 형식이 아닙니다.";
-  if (!v.phone.trim()) e.phone = "전화번호를 입력해 주세요.";
-  else if (!/^[0-9\-\s+()]{9,15}$/.test(v.phone))
-    e.phone = "올바른 전화번호 형식이 아닙니다.";
-  if (!v.message.trim()) e.message = "문의 내용을 입력해 주세요.";
-  return e;
-}
+import { submitInquiry } from "@/app/actions";
+import {
+  initialValues as initial,
+  validateInquiry as validate,
+  type InquiryErrors as Errors,
+  type InquiryValues as Values,
+} from "@/lib/inquiry";
 
 const inputClass =
   "w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-300 dark:focus:ring-zinc-300/10";
@@ -27,6 +16,8 @@ export default function ContactForm() {
   const [values, setValues] = useState<Values>(initial);
   const [errors, setErrors] = useState<Errors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [formError, setFormError] = useState("");
 
   function onChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -36,13 +27,28 @@ export default function ContactForm() {
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (pending) return;
+    setFormError("");
     const found = validate(values);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
-    // TODO: 백엔드 연동 시 여기서 values를 전송합니다.
-    setSubmitted(true);
+
+    setPending(true);
+    try {
+      const result = await submitInquiry(values);
+      if (result.ok) {
+        setSubmitted(true);
+      } else {
+        if (result.errors) setErrors(result.errors);
+        setFormError(result.message ?? "");
+      }
+    } catch {
+      setFormError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setPending(false);
+    }
   }
 
   if (submitted) {
@@ -126,11 +132,18 @@ export default function ContactForm() {
         />
       </Field>
 
+      {formError && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {formError}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="h-12 rounded-full bg-indigo-600 px-6 text-base font-medium text-white transition-colors hover:bg-indigo-500"
+        disabled={pending}
+        className="h-12 rounded-full bg-indigo-600 px-6 text-base font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        문의하기
+        {pending ? "접수 중..." : "문의하기"}
       </button>
     </form>
   );
