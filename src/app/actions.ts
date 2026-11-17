@@ -1,6 +1,8 @@
 "use server";
 
+import { after } from "next/server";
 import { db } from "@/db";
+import { notifyNewInquiry } from "@/lib/notify";
 import { inquiries } from "../../drizzle/schema";
 import {
   validateInquiry,
@@ -25,12 +27,15 @@ export async function submitInquiry(input: InquiryValues): Promise<SubmitResult>
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
   try {
-    await db.insert(inquiries).values({
+    const clean: InquiryValues = {
       name: values.name.trim(),
       email: values.email.trim(),
       phone: values.phone.trim(),
       message: values.message.trim(),
-    });
+    };
+    await db.insert(inquiries).values(clean);
+    // 응답을 막지 않고, 응답 이후에 알림 메일을 보낸다.
+    after(() => notifyNewInquiry(clean));
     return { ok: true };
   } catch (err) {
     console.error("문의 저장 실패:", err);

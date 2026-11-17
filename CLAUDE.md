@@ -36,3 +36,5 @@ Korean-language landing page for corporate "vibe coding" training, with an inqui
 ## Environment
 
 `.env` needs `DATABASE_URL` (Postgres connection string, used by both the app and drizzle-kit).
+
+Optional, for new-inquiry notification emails (`src/lib/notify.ts`, sent via Resend inside `after()` in `submitInquiry`; skipped with a warning if unset, failures never fail the submission): `RESEND_API_KEY`, `ADMIN_NOTIFY_EMAIL` (without a verified domain this must be the Resend signup email), `SITE_URL` (adds the `/admin` link), `NOTIFY_FROM` (defaults to `onboarding@resend.dev`).
