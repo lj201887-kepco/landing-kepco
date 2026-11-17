@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
@@ -10,15 +11,33 @@ import {
 } from "@/lib/inquiry";
 import InquiryTable from "@/components/admin/InquiryTable";
 
-export const dynamic = "force-dynamic";
-
 const PAGE_SIZE = 20;
 
 function first(v: string | string[] | undefined) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
+// cacheComponents 사용 시 searchParams/DB 조회는 요청 시점 작업이므로 Suspense 안에서 처리한다.
+export default function AdminPage({ searchParams }: PageProps<"/admin">) {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-6xl px-4 py-10">
+          <h1 className="text-2xl font-bold">문의 관리</h1>
+          <p className="mt-6 text-zinc-500">불러오는 중...</p>
+        </main>
+      }
+    >
+      <AdminContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function AdminContent({
+  searchParams,
+}: {
+  searchParams: PageProps<"/admin">["searchParams"];
+}) {
   await assertAdmin();
   const sp = await searchParams;
   const q = (first(sp.q) ?? "").trim();
