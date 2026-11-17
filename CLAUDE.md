@@ -27,6 +27,12 @@ Korean-language landing page for corporate "vibe coding" training, with an inqui
 - `src/db/index.ts` — Drizzle client. It throws at import time if `DATABASE_URL` is unset, and uses `prepare: false` because Supabase's transaction pooler doesn't support prepared statements.
 - `drizzle/schema.ts` — the schema, at the repo root (not under `src`). It is imported with a relative path (`../../drizzle/schema`); the `@/*` alias only maps to `./src/*`.
 
+### Admin (`/admin`)
+
+- `src/app/admin/page.tsx` — server component listing inquiries (search `q`, `status` filter, `page`, 20/page via URL query). `actions.ts` holds `updateInquiry`, `updateInquiryStatus`, `deleteInquiry` (server-side re-validation, hard delete). UI is in `src/components/admin/` (edit happens in a native `<dialog>` modal).
+- `inquiries.status` is `new | in_progress | done` (`INQUIRY_STATUSES` in `src/lib/inquiry.ts`).
+- **No authentication yet.** `assertAdmin()` in `src/lib/admin.ts` is a no-op stub that every admin page/action calls — implement it before deploying, since `/admin` exposes personal data.
+
 ## Environment
 
 `.env` needs `DATABASE_URL` (Postgres connection string, used by both the app and drizzle-kit).

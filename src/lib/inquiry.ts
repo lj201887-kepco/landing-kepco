@@ -5,7 +5,18 @@ export type InquiryValues = {
   message: string;
 };
 
-export type InquiryErrors = Partial<Record<keyof InquiryValues, string>>;
+export const INQUIRY_STATUSES = ["new", "in_progress", "done"] as const;
+export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
+export const STATUS_LABELS: Record<InquiryStatus, string> = {
+  new: "신규",
+  in_progress: "처리중",
+  done: "완료",
+};
+export function isInquiryStatus(v: unknown): v is InquiryStatus {
+  return (INQUIRY_STATUSES as readonly unknown[]).includes(v);
+}
+
+export type InquiryErrors =Partial<Record<keyof InquiryValues, string>>;
 
 export const initialValues: InquiryValues = {
   name: "",

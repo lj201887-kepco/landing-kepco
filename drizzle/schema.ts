@@ -12,6 +12,7 @@ export const inquiries = pgTable("inquiries", {
   email: varchar("email", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 30 }).notNull(),
   message: text("message").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("new"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
